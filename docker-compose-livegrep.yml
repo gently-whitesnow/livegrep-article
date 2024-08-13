@@ -1,0 +1,67 @@
+version: '3.9'
+
+services:
+  livegrep-backend-linux:
+    image: "gently4005/livegrep-base:latest"
+    command:
+      - "/livegrep/bin/codesearch"
+      - "-load_index=/data/index.idx"
+      - "-threads=4"
+      # необходимые настройки для перезагрузки индекса и взаимодействия внутри сети
+      - "-grpc=0.0.0.0:9898"
+      - "-reload_rpc" 
+    volumes:
+      - livegrep-data:/data
+    networks:
+      - livegrep-network
+    logging:
+      driver: json-file
+      options:
+        max-file: 10
+        max-size: 10m
+    restart: unless-stopped
+
+  livegrep-frontend:
+    image: "gently4005/livegrep-base:latest"
+    command:
+      - "/livegrep/bin/livegrep"
+      - "-docroot"
+      - "/livegrep/web/"
+      - "-listen"
+      - "0.0.0.0:8910"
+      - "-connect"
+      - "livegrep-backend-linux:9898"
+      - "/data/configuration.json"
+    volumes:
+      - livegrep-data:/data
+    networks:
+      - livegrep-network
+    logging:
+      driver: json-file
+      options:
+        max-file: 10
+        max-size: 10m
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - "8841:80"
+    networks:
+      - livegrep-network
+    logging:
+      driver: json-file
+      options:
+        max-file: 10
+        max-size: 10m
+    restart: unless-stopped
+
+volumes:
+  livegrep-data:
+    external: true
+
+networks:
+  livegrep-network:
+    external: true

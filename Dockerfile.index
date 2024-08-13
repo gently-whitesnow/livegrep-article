@@ -1,0 +1,29 @@
+FROM gently4005/livegrep-base:latest as builder
+
+WORKDIR /
+
+COPY main.py requirements.txt /
+
+ARG GITLAB_DOMAIN
+ARG GITLAB_PRIVATE_TOKEN
+ARG GITLAB_LOGIN
+
+# ставим зависимости и вызываем наш скрипт
+RUN apt-get update  \
+    && apt-get install -y python3-pip git \
+    && pip3 install -r requirements.txt  \
+    && python3 /main.py  \
+    && mkdir -p /data 
+
+# папка, куда будут клонироваться репозитории перед индексацией
+WORKDIR /clone_root
+
+# копируем конфигурацию в общую папку, так как она нужна не только для индексации
+# запускаем индексацию
+# -out путь к готовому индексу
+# -skip-missing пропускать репозитории, в которых отсутствует указанная ревизия
+# -num-workers количество потоков для индексации (по умолчанию 8)
+# -reload-backend перезагружать бэкенд после индексации, чтобы он подтянул конфигурацию (очень полезная настройка)
+CMD ["/bin/sh", "-c", "\
+    cp -rf /configuration.json /data/configuration.json && \
+    /livegrep/bin/livegrep-fetch-reindex -out /data/index.idx -skip-missing -num-workers 4 -reload-backend livegrep-backend-linux:9898 /data/configuration.json"]

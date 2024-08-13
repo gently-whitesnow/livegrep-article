@@ -1,0 +1,24 @@
+.build_tpl: &index_definition
+  stage: deploy-index
+  interruptible: false
+  tags:
+    - deploy
+  rules:
+    - if: '$IS_SCHEDULE'
+      when: always
+    - when: manual
+  dependencies:
+    - generate-index
+  script:
+    - docker -H $DOCKER_HOST login -u $REGISTRY_LOGIN -p $REGISTRY_PASS $REGISTRY
+    - docker-compose -H $DOCKER_HOST -f docker-compose-index.yml pull
+    - docker-compose -H $DOCKER_HOST -f docker-compose-index.yml down
+    - docker-compose -H $DOCKER_HOST -f docker-compose-index.yml up -d --force-recreate
+    - touch ${CI_PROJECT_DIR}/success
+    - docker -H $DOCKER_HOST system prune -f
+
+
+deploy-index:
+  <<: *index_definition
+  variables:
+    DOCKER_HOST: tcp://your-server-with-docker-host:2375/

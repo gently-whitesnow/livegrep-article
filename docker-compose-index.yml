@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  livegrep_generate_config:
+    build:
+      context: .
+      dockerfile: Dockerfile.index
+      args:
+        GITLAB_DOMAIN: ${GITLAB_DOMAIN}
+        GITLAB_PRIVATE_TOKEN: ${GITLAB_PRIVATE_TOKEN}
+        GITLAB_LOGIN: ${GITLAB_LOGIN}
+    image: ${REPOSITORY:-your-local-docker-registry/livegrep_generate_config}:${UNIQUE_VERSION:-latest}
+    volumes:
+      - livegrep-data:/data
+    logging:
+      driver: json-file
+      options:
+        max-file: 10
+        max-size: 10m
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2"
+    networks:
+      - livegrep-network
+
+volumes:
+  livegrep-data:
+    external: true
+
+networks:
+  livegrep-network:
+    external: true

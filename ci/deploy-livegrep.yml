@@ -1,0 +1,22 @@
+.build_tpl: &index_definition
+  stage: deploy-livegrep
+  interruptible: false
+  tags:
+    - deploy
+  rules:
+    - when: manual
+      allow_failure: true
+  script:
+    - docker -H $DOCKER_HOST login -u $REGISTRY_LOGIN -p $REGISTRY_PASS $REGISTRY
+    - docker-compose -H $DOCKER_HOST -f docker-compose-livegrep.yml pull
+    - docker-compose -H $DOCKER_HOST -f docker-compose-livegrep.yml build nginx
+    - docker-compose -H $DOCKER_HOST -f docker-compose-livegrep.yml down
+    - docker-compose -H $DOCKER_HOST -f docker-compose-livegrep.yml up -d --force-recreate
+    - touch ${CI_PROJECT_DIR}/success
+
+
+deploy-livegrep:
+  <<: *index_definition
+  variables:
+    DOCKER_HOST: tcp://your-server-with-docker-host:2375/
+  needs: []

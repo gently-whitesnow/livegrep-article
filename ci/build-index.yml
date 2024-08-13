@@ -1,0 +1,19 @@
+.build_tpl: &index_definition
+  stage: build-index
+  interruptible: true
+  rules:
+    - if: '$IS_SCHEDULE'
+      when: always
+    - when: manual
+  script:
+    - UNIQUE_VERSION=$CI_COMMIT_REF_SLUG docker-compose -f docker-compose-index.yml pull --ignore-pull-failures
+    - docker-compose -f docker-compose-index.yml build --no-cache
+    - docker login -u $REGISTRY_LOGIN -p $REGISTRY_PASS $REGISTRY
+    - docker-compose -f docker-compose-index.yml push
+
+generate-index:
+  <<: *index_definition
+  artifacts:
+    paths:
+      - docker-compose-index.yml
+    expire_in: 1 day

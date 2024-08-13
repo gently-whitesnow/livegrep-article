@@ -1,0 +1,12 @@
+variables:
+  REGISTRY: your-local-docker-registry
+
+include:
+  - local: ci/build-index.yml
+  - local: ci/deploy-index.yml
+  - local: ci/deploy-livegrep.yml
+
+stages:
+  - build-index
+  - deploy-index
+  - deploy-livegrep
